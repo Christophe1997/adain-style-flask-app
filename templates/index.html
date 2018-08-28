@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../static/css/bulma.min.css">
+  <script defer src="https://use.fontawesome.com/releases/v5.1.0/js/all.js"></script>
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+  <title>Adain style transfer</title>
+</head>
+<body>
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="container">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://arxiv.org/abs/1703.06868">
+        <img src="../static/images/adain.png"
+             alt="Arbitrary Style Transfer in Real-time with Adaptive Instance Normalization"
+             width="180">
+      </a>
+    </div>
+    <div class="navbar-menu is-active is-right">
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="field is-grouped">
+            <p class="control">
+              <a id="tryIt" class="button is-success">
+                <span class="icon">
+                  <i class="far fa-laugh-wink"></i>
+                </span>
+                <span>
+                  try it now!
+                </span>
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+<main>
+  <div class="container">
+    <div id="input" class="columns">
+      <div id="input-content" class="column">
+        <div class="file has-name">
+          <form id="input-content-form" enctype="multipart/form-data">
+            <label class="file-label">
+              <input id="input-content-img" class="file-input" type="file" name="resume">
+              <span class="file-cta">
+              <span class="file-icon">
+                <i class="fas fa-upload"></i>
+              </span>
+              <span class="file-label">
+                Choose a file…
+              </span>
+            </span>
+            </label>
+          </form>
+        </div>
+        <div class="card">
+          <div id="content-image" class="card-image">
+            <figure id="input-content-preview" class="image is-1by1" content="content">
+              <img src="../static/images/content/njust.jpg" width="500" height="500">
+            </figure>
+          </div>
+          <div id="content-caption" class="card-content">
+            <span><strong>content: </strong></span>
+            <span id="input-content-img-name">njust</span>
+          </div>
+        </div>
+      </div>
+      <div id="input-style" class="column">
+        <div class="file has-name">
+          <form id="input-style-form" enctype="multipart/form-data">
+            <label class="file-label">
+              <input id="input-style-img" class="file-input" type="file" name="resume">
+              <span class="file-cta">
+              <span class="file-icon">
+                <i class="fas fa-upload"></i>
+              </span>
+              <span class="file-label">
+                Choose a file…
+              </span>
+            </span>
+            </label>
+          </form>
+        </div>
+        <div class="card">
+          <div id="style-image" class="card-image">
+            <figure id="input-style-preview" class="image is-1by1">
+              <img src="../static/images/style/the_resevoir_at_poitiers.jpg">
+            </figure>
+          </div>
+          <div id="style-caption" class="card-content">
+            <span><strong>style:</strong></span>
+            <span id="input-style-img-name">the resevoir at poitiers</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="output" class="columns">
+      <div class="column">
+        <div class="card">
+          <div id="output-img" class="card-image">
+            <figure id="output-image-preview" class="image is-2by1">
+              <img src="../static/images/stylized/njust_stylized_the_resevoir_at_poitiers.jpg">
+            </figure>
+          </div>
+          <div id="output-caption" class="card-content">
+            <span><strong>stylized: </strong></span>
+            <span id="output-image-name">njust_stylized_the_resevoir_at_poitiers</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+  $('#input-content-img').on("change", function (e) {
+    var file = e.target.files[0];
+    if (!file.type.match('image.*')) {
+      return false;
+    }
+    var reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = function (arg) {
+      var img = '<img src="' + arg.target.result + '" alt="preview"/>';
+      $("#input-content-preview").empty().append(img);
+      $("#input-content-img-name").text(file.name);
+    };
+  });
+  $('#input-style-img').on("change", function (e) {
+    var file = e.target.files[0];
+    if (!file.type.match('image.*')) {
+      return false;
+    }
+    var reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = function (arg) {
+      var img = '<img src="' + arg.target.result + '" alt="preview"/>';
+      $("#input-style-preview").empty().append(img);
+      $("#input-style-img-name").text(file.name);
+    };
+  });
+  $('#tryIt').on('click', function () {
+    var form_data = new FormData();
+    var input_content = $('#input-content-img')[0].files[0];
+    var input_style = $('#input-style-img')[0].files[0];
+
+    if (input_content === undefined) {
+      alert("请选择内容图片");
+      return false;
+    } else if (input_content === undefined) {
+      alert("请选择风格图片");
+      return false;
+    }
+
+    form_data.append("input_content", input_content);
+    form_data.append("input_style", input_style);
+
+    $.ajax({
+      method: "POST",
+      url: "{{ url_for('transfer') }}",
+      cache: false,
+      contentType: false,
+      processData: false,
+      data: form_data,
+      success: function (data) {
+        $('#output-image-preview').empty().append(
+          '<img src="' + data.path + '" alt="preview"/>');
+        $('#output-image-name').text(data.name);
+      }
+    })
+  });
+</script>
+</body>
+</html>
